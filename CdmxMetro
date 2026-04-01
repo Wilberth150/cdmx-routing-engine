@@ -1,0 +1,164 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <map>
+#include <iomanip>
+
+using namespace std;
+
+const int INF = 2147483647; 
+
+struct ConexionFW {
+    int peso;
+    string nombre_linea;
+    ConexionFW(int p, string l) : peso(p), nombre_linea(l) {}
+    ConexionFW() : peso(INF), nombre_linea("") {}
+};
+
+void agregarRuta(string u, string v, int w, string lin, map<string, int>& s_id, vector<vector<ConexionFW> >& matriz_fw, vector<vector<int> >& ruta_siguiente) {
+    int uid = s_id[u];
+    int vid = s_id[v];
+    matriz_fw[uid][vid] = ConexionFW(w, lin);
+    matriz_fw[vid][uid] = ConexionFW(w, lin);
+    ruta_siguiente[uid][vid] = vid;
+    ruta_siguiente[vid][uid] = uid;
+}
+
+int main() {
+    vector<string> estaciones;
+    estaciones.push_back("Guerrero");
+    estaciones.push_back("Garibaldi");
+    estaciones.push_back("Pino Suarez");
+    estaciones.push_back("Chabacano");
+    estaciones.push_back("Indios Verdes");
+    estaciones.push_back("Hidalgo");
+    estaciones.push_back("Centro Medico");
+    estaciones.push_back("4 Caminos");
+    estaciones.push_back("Tacubaya");
+    estaciones.push_back("Zapata");
+    estaciones.push_back("Mixcoac");
+    estaciones.push_back("Ermita");
+    estaciones.push_back("Universidad");
+    estaciones.push_back("Tlahuac");
+    estaciones.push_back("Tasquena");
+    estaciones.push_back("Pantitlan");
+    estaciones.push_back("Const. 1917");
+    estaciones.push_back("Atlalilco");
+
+    int V = estaciones.size();
+    map<string, int> s_id;
+    for(int i = 0; i < V; ++i) s_id[estaciones[i]] = i;
+
+    vector<vector<ConexionFW> > matriz_fw(V, vector<ConexionFW>(V, ConexionFW(INF, "")));
+    vector<vector<int> > ruta_siguiente(V, vector<int>(V, -1));
+
+    for (int i = 0; i < V; ++i) {
+        matriz_fw[i][i] = ConexionFW(0, "Misma Estacion");
+        ruta_siguiente[i][i] = i;
+    }
+
+    agregarRuta("Indios Verdes", "Hidalgo", 6, "Linea 3", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Hidalgo", "Centro Medico", 4, "Linea 3", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Centro Medico", "Zapata", 3, "Linea 3", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Zapata", "Universidad", 5, "Linea 3", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("4 Caminos", "Hidalgo", 8, "Linea 2", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Hidalgo", "Pino Suarez", 0, "Linea 2", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Pino Suarez", "Chabacano", 1, "Linea 2", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Chabacano", "Ermita", 5, "Linea 2", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Ermita", "Tasquena", 2, "Linea 2", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Guerrero", "Garibaldi", 0, "Linea 8", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Garibaldi", "Pino Suarez", 2, "Linea 8", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Pino Suarez", "Chabacano", 1, "Linea 8", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Chabacano", "Atlalilco", 2, "Linea 8", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Atlalilco", "Const. 1917", 2, "Linea 8", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Atlalilco", "Ermita", 11, "Linea 12", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Tacubaya", "Centro Medico", 2, "Linea 9", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Centro Medico", "Chabacano", 1, "Linea 9", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Chabacano", "Pantitlan", 5, "Linea 9", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Mixcoac", "Zapata", 2, "Linea 12", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Zapata", "Ermita", 2, "Linea 12", s_id, matriz_fw, ruta_siguiente);
+    agregarRuta("Ermita", "Tlahuac", 12, "Linea 12", s_id, matriz_fw, ruta_siguiente);
+
+    cout << "Inicializando kernel de rutas (Floyd-Warshall)...\n";
+    for (int k = 0; k < V; ++k) {
+        for (int i = 0; i < V; ++i) {
+            for (int j = 0; j < V; ++j) {
+                if (matriz_fw[i][k].peso != INF && matriz_fw[k][j].peso != INF) {
+                    if (matriz_fw[i][k].peso + matriz_fw[k][j].peso < matriz_fw[i][j].peso) {
+                        matriz_fw[i][j].peso = matriz_fw[i][k].peso + matriz_fw[k][j].peso;
+                        ruta_siguiente[i][j] = ruta_siguiente[i][k];
+                    }
+                }
+            }
+        }
+    }
+
+    while (true) {
+        cout << "\n=================================================================\n";
+        cout << "   SISTEMA OPERATIVO METRO CDMX\n";
+        cout << "=================================================================\n";
+        for (int i = 0; i < V; i += 3) {
+            for (int j = 0; j < 3 && i + j < V; j++) {
+                // Arreglo del formateo: right para el numero, reset de fill a ' ', y left para el string
+                cout << "[" << right << setfill('0') << setw(2) << i + j << "] " 
+                     << setfill(' ') << left << setw(16) << estaciones[i + j];
+            }
+            cout << "\n";
+        }
+        cout << "[-1] Salir del sistema\n";
+        cout << "=================================================================\n";
+
+        int o, d;
+        cout << "Origen (ID): ";
+        if (!(cin >> o)) { cin.clear(); cin.ignore(10000, '\n'); continue; }
+        if (o == -1) break;
+
+        cout << "Destino (ID): ";
+        if (!(cin >> d)) { cin.clear(); cin.ignore(10000, '\n'); continue; }
+        if (d == -1) break;
+
+        if (o < 0 || o >= V || d < 0 || d >= V) { cout << "[ERROR] ID fuera de limites.\n"; continue; }
+
+        if (matriz_fw[o][d].peso == INF) {
+            cout << "\n[RESULTADO] Nodos incomunicados.\n";
+        } else if (o == d) {
+            cout << "\n[RESULTADO] Origen y destino identicos.\n";
+        } else {
+            cout << "\n[TIEMPO] " << matriz_fw[o][d].peso << " minutos.\n";
+            cout << "\n--- RUTA ---\n";
+            
+            int actual = o;
+            vector<string> recorrido;
+            recorrido.push_back(estaciones[actual]);
+            string lineaActualName = "";
+
+            while (actual != d) {
+                int siguiente = ruta_siguiente[actual][d];
+                string lineaSegmento = matriz_fw[actual][siguiente].nombre_linea;
+
+                if (actual == o) {
+                    cout << "Aborda en: " << estaciones[actual] << " -> " << lineaSegmento << "\n";
+                    lineaActualName = lineaSegmento;
+                } else {
+                    if (lineaSegmento != lineaActualName) {
+                        cout << "[!] TRASBORDO EN " << estaciones[actual] << " -> " << lineaSegmento << "\n";
+                        lineaActualName = lineaSegmento;
+                    } else {
+                        cout << " -> " << estaciones[actual] << "\n";
+                    }
+                }
+                recorrido.push_back(estaciones[siguiente]);
+                actual = siguiente;
+            }
+
+            cout << "Llegada: " << estaciones[d] << "\n";
+            cout << "\nSecuencia rapida (" << (int)(recorrido.size() - 1) << " tramos):\n";
+            for (size_t i = 0; i < recorrido.size(); i++) {
+                cout << recorrido[i] << (i < recorrido.size() - 1 ? " -> " : "");
+            }
+            cout << "\n";
+        }
+    }
+
+    return 0;
+}
